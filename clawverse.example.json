@@ -1,0 +1,94 @@
+{
+  "nodes": {
+    "main": {
+      "url": "ws://192.168.1.10:18789",
+      "token": "your-token-here",
+      "labels": ["primary", "production"],
+      "capabilities": ["browser", "canvas", "exec"]
+    },
+    "worker-1": {
+      "url": "ws://192.168.1.11:18789",
+      "sshTarget": "user@192.168.1.11",
+      "labels": ["worker", "code-review"],
+      "capabilities": ["exec"]
+    },
+    "worker-2": {
+      "url": "ws://192.168.1.12:18789",
+      "labels": ["worker", "research"],
+      "capabilities": ["browser", "exec"]
+    }
+  },
+  "topology": {
+    "type": "tree",
+    "root": "main",
+    "children": {
+      "main": ["worker-1", "worker-2"]
+    }
+  },
+  "routing": {
+    "default": "main",
+    "rules": [
+      {
+        "match": { "channel": "dingtalk" },
+        "target": "worker-1",
+        "priority": 10
+      },
+      {
+        "match": { "label": "code-review" },
+        "target": "worker-1",
+        "priority": 5
+      },
+      {
+        "match": { "label": "research" },
+        "target": "worker-2",
+        "priority": 5
+      }
+    ],
+    "escalation": {
+      "enabled": true,
+      "triggers": ["ESCALATE", "UNABLE_TO_HANDLE", "NEED_HUMAN"]
+    }
+  },
+  "sync": {
+    "enabled": true,
+    "interval": 60,
+    "scope": {
+      "memory": true,
+      "sessions": true,
+      "config": false,
+      "skills": true
+    },
+    "conflictResolution": "last-write-wins"
+  },
+  "bridges": [
+    {
+      "type": "dingtalk",
+      "enabled": true,
+      "config": {
+        "outgoingToken": "your-dingtalk-token",
+        "apiUrl": "http://localhost:18800/api/agent"
+      }
+    },
+    {
+      "type": "webhook",
+      "enabled": true,
+      "config": {
+        "endpoints": [
+          {
+            "name": "alerts",
+            "url": "https://your-webhook-endpoint.com/alerts",
+            "events": ["node.offline", "escalation"]
+          }
+        ]
+      }
+    }
+  ],
+  "server": {
+    "host": "0.0.0.0",
+    "port": 18800,
+    "auth": {
+      "enabled": true,
+      "token": "your-hub-token"
+    }
+  }
+}

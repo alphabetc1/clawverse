@@ -1,0 +1,4 @@
+packages:
+  - "packages/*"
+  - "bridges/*"
+  - "bridges/common"

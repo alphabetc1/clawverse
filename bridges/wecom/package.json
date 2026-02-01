@@ -1,0 +1,31 @@
+{
+  "name": "@clawverse/bridge-wecom",
+  "version": "0.1.0",
+  "description": "WeCom (企业微信) channel bridge for OpenClaw/ClawVerse",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "standalone": "tsx src/standalone.ts"
+  },
+  "dependencies": {
+    "@clawverse/bridge-common": "workspace:*",
+    "express": "^5.2.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/express": "^5.0.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "openclaw": {
+    "channel": {
+      "id": "wecom",
+      "label": "WeCom",
+      "selectionLabel": "WeCom (企业微信)",
+      "blurb": "Connect to WeCom enterprise bot",
+      "docsPath": "/channels/wecom"
+    }
+  }
+}
