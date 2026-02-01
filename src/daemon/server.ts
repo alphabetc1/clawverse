@@ -178,7 +178,7 @@ export class DaemonServer {
 
     // Get node details
     app.get("/api/nodes/:nodeId", authMiddleware, (req: Request, res: Response) => {
-      const { nodeId } = req.params;
+      const nodeId = req.params.nodeId as string;
       const state = this.registry.getState(nodeId);
       if (!state) {
         res.status(404).json({ error: `Node ${nodeId} not found` });

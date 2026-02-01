@@ -54,34 +54,6 @@ ClawVerse enables **hierarchical OpenClaw clusters** where one OpenClaw can mana
 └─────────┘                            └─────────┘
 ```
 
-### Cluster Capabilities
-
-| Feature | Description |
-|---------|-------------|
-| **Multi-level Hierarchy** | OpenClaw manages OpenClaws, which can manage more OpenClaws |
-| **Task Delegation** | Parent assigns sub-tasks to children |
-| **Problem Escalation** | Child auto-escalates unhandled tasks to parent |
-| **Cross-node Sync** | Memory, sessions, skills synchronized across cluster |
-| **Smart Routing** | Route by channel, capability, load, or custom rules |
-
-### Topology Modes
-
-| Mode | Description | Use Case |
-|------|-------------|----------|
-| **Flat** | All nodes are peers | Multi-device sync, load balancing |
-| **Tree** | Hierarchical parent-child | Task delegation, large-scale clusters |
-
-### Communication Flow
-
-```
-Channels ──► Hub ──► Master OpenClaw ──► Worker OpenClaw ──► Sub-worker OpenClaw
-                 ◄── Escalation ◄────────── Escalation ◄──────────────┘
-```
-
-- **Delegation**: Tasks flow downward through the hierarchy
-- **Escalation**: Unhandled tasks bubble up to parent nodes
-- **Sync**: Data synchronized bidirectionally across all connected nodes
-
 ---
 
 ## ✨ Key Features
@@ -275,20 +247,6 @@ clawverse/
 │   ├── feishu/       # Feishu bridge
 │   └── wecom/        # WeCom bridge
 └── docs/
-```
-
----
-
-## 🎨 Logo Concept
-
-OpenClaw: 🦞 Red Lobster | ClawVerse: Multiple claws orbiting a hub
-
-```
-       🦞
-    ╱     ╲
-  🦞 ──●── 🦞
-    ╲     ╱
-       🦞
 ```
 
 ---

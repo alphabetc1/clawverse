@@ -29,4 +29,7 @@ program.addCommand(daemonCommand);
 program.addCommand(contextCommand);
 
 // Parse and execute
-program.parse();
+program.parseAsync().catch((err) => {
+  console.error("Error:", err);
+  process.exit(1);
+});

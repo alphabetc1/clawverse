@@ -4,13 +4,16 @@
   "description": "Centralized control plane for managing multiple OpenClaw instances",
   "private": true,
   "type": "module",
+  "bin": {
+    "clawverse": "./dist/cli/index.js"
+  },
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm --filter @clawverse/hub dev",
-    "start": "pnpm --filter @clawverse/hub start",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli/index.js daemon start",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "clawverse": "node packages/cli/dist/index.js"
+    "clawverse": "node dist/cli/index.js"
   },
   "keywords": [
     "openclaw",
@@ -25,7 +28,10 @@
   },
   "packageManager": "pnpm@10.23.0",
   "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "commander": "^13.1.0",
     "express": "^5.0.1",
+    "json5": "^2.2.3",
     "nanoid": "^5.0.9",
     "ws": "^8.18.2"
   },
