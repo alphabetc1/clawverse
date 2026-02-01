@@ -2,7 +2,7 @@
 
 <p align="center">
   🦞 多实例 OpenClaw 编排平台<br>
-  分布式 AI 助手的集中控制面板
+  <b>管理、路由、同步你的分布式 AI 助手</b>
 </p>
 
 <p align="center">
@@ -13,52 +13,88 @@
   <img src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue" alt="platform">
   <img src="https://img.shields.io/badge/language-TypeScript-3178c6" alt="language">
   <img src="https://img.shields.io/badge/runtime-Node.js%2022%2B-339933" alt="runtime">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="license">
 </p>
-
----
-
-## ✨ 功能亮点
-
-| 功能 | 说明 |
-|------|------|
-| 🌐 **节点注册** | 注册并监控多个 OpenClaw 实例，支持健康检查 |
-| 🌳 **拓扑管理** | 配置平行（并列）或树形（层级）的节点关系 |
-| 🔀 **智能路由** | 根据渠道、标签或自定义规则路由消息 |
-| 🔄 **数据同步** | 跨节点同步记忆、会话和技能 |
-| ⬆️ **问题升级** | 自动将无法处理的任务升级到父节点 |
-| ⬇️ **任务委托** | 从父节点向子节点委托任务 |
-| 💬 **扩展渠道** | 支持钉钉、飞书、企业微信等国内渠道 |
-| 🖥️ **CLI 工具** | 命令行管理状态、节点和配置 |
 
 ---
 
 ## 🏗️ 系统架构
 
+ClawVerse 支持**层级化 OpenClaw 集群**，一个 OpenClaw 可以管理多个 OpenClaw，形成可扩展的树形结构：
+
 ```
-                        ┌─────────────────────────────────────────┐
-                        │           ClawVerse Hub 控制面板         │
-                        │  ┌───────────────────────────────────┐  │
-                        │  │   节点注册    │    拓扑配置        │  │
-                        │  ├───────────────────────────────────┤  │
-      钉钉   ───────────┼──│   路由器      │    同步引擎        │  │
-      飞书   ───────────┼──│   渠道桥接    │                    │  │
-      企业微信 ─────────┼──└───────────────────────────────────┘  │
-                        └──────────────────┬──────────────────────┘
-                                           │
-                ┌──────────────────────────┼──────────────────────────┐
-                │                          │                          │
-                ▼                          ▼                          ▼
-          ┌──────────┐              ┌──────────┐              ┌──────────┐
-          │ OpenClaw │              │ OpenClaw │              │ OpenClaw │
-          │  节点 A  │◄────────────►│  节点 B  │◄────────────►│  节点 C  │
-          │  (主节点) │    同步      │ (工作节点)│    同步      │ (工作节点)|
-          └──────────┘              └──────────┘              └──────────┘
-               │                         │                         │
-               ▼                         ▼                         ▼
-          iMessage、CLI             钉钉消息处理             代码审查任务
-          WhatsApp 等                飞书消息处理             研究任务
+                              ┌─────────────────┐
+                              │   ClawVerse     │
+                              │      Hub        │
+                              │   (控制面板)     │
+                              └────────┬────────┘
+                                       │
+           ┌───────────────────────────┼───────────────────────────┐
+           │                           │                           │
+           ▼                           ▼                           ▼
+    ┌─────────────┐             ┌─────────────┐             ┌─────────────┐
+    │  OpenClaw   │             │  OpenClaw   │             │  OpenClaw   │
+    │    主节点    │             │    主节点    │             │    主节点    │
+    │  (区域 A)   │             │  (区域 B)   │             │  (区域 C)   │
+    └──────┬──────┘             └──────┬──────┘             └─────────────┘
+           │                           │
+     ┌─────┴─────┐               ┌─────┴─────┐
+     │           │               │           │
+     ▼           ▼               ▼           ▼
+┌─────────┐ ┌─────────┐    ┌─────────┐ ┌─────────┐
+│OpenClaw │ │OpenClaw │    │OpenClaw │ │OpenClaw │
+│ 工作节点 │ │ 工作节点 │    │ 工作节点 │ │ 工作节点 │
+│  A-1    │ │  A-2    │    │  B-1    │ │  B-2    │
+└────┬────┘ └─────────┘    └─────────┘ └────┬────┘
+     │                                      │
+     ▼                                      ▼
+┌─────────┐                            ┌─────────┐
+│OpenClaw │  ← 支持多层嵌套             │OpenClaw │
+│  A-1-1  │                            │  B-2-1  │
+└─────────┘                            └─────────┘
 ```
+
+### 集群能力
+
+| 特性 | 说明 |
+|------|------|
+| **多层级架构** | OpenClaw 管理 OpenClaw，可继续管理更多 OpenClaw |
+| **任务委托** | 父节点向子节点分配子任务 |
+| **问题升级** | 子节点无法处理时自动升级到父节点 |
+| **跨节点同步** | 记忆、会话、技能在集群间同步 |
+| **智能路由** | 按渠道、能力、负载或自定义规则路由 |
+
+### 拓扑模式
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| **平行 (Flat)** | 所有节点对等 | 多设备同步、负载均衡 |
+| **树形 (Tree)** | 层级父子关系 | 任务委托、大规模集群 |
+
+### 通信流向
+
+```
+渠道 ──► Hub ──► 主 OpenClaw ──► 工作 OpenClaw ──► 子工作 OpenClaw
+             ◄── 问题升级 ◄──────── 问题升级 ◄──────────────┘
+```
+
+- **任务委托**：任务沿层级向下流转
+- **问题升级**：无法处理的任务向上冒泡到父节点
+- **数据同步**：数据在所有连接的节点间双向同步
+
+---
+
+## ✨ 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| 🌳 **拓扑管理** | 定义 OpenClaw 实例间的平行或层级关系 |
+| 🔀 **智能路由** | 根据渠道、标签或自定义规则路由消息 |
+| 🔄 **数据同步** | 跨节点同步记忆、会话和技能 |
+| ⬆️ **问题升级** | 自动将无法处理的任务升级到父节点 |
+| ⬇️ **任务委托** | 从父节点向子节点委托子任务 |
+| 🌐 **节点注册** | 注册、监控和健康检查多个实例 |
+| 📱 **全渠道支持** | OpenClaw 所有原生渠道 + 钉钉、飞书、企业微信 |
 
 ---
 
@@ -68,54 +104,32 @@
 
 - [Node.js](https://nodejs.org/) >= 22.0.0
 - [pnpm](https://pnpm.io/) >= 10.0.0
-- 一个或多个运行中的 [OpenClaw](https://github.com/nicepkg/openclaw) 实例
+- 目标机器上已安装 [OpenClaw](https://github.com/nicepkg/openclaw)
 
-### 第一步：安装 ClawVerse
+### 1. 安装 ClawVerse
 
 ```bash
-# 克隆仓库
 git clone https://github.com/nicepkg/clawverse.git
 cd clawverse
-
-# 安装依赖
-pnpm install
-
-# 构建所有包
-pnpm build
+pnpm install && pnpm build
 ```
 
-### 第二步：启动 OpenClaw 实例
+### 2. 启动 OpenClaw Gateway
 
-在每台需要运行 OpenClaw 的机器上：
+在每台运行 OpenClaw 的机器上：
 
 ```bash
-# 安装 OpenClaw（如尚未安装）
-npm install -g openclaw
+# 配置渠道（与单独使用 OpenClaw 相同）
+openclaw channels add imessage   # 或 discord, telegram 等
 
-# 启动 OpenClaw Gateway，开启远程访问
+# 启动 Gateway 供 ClawVerse 连接
 openclaw gateway start --port 18789
-
-# 或者使用指定配置启动
-openclaw gateway start --config ~/.openclaw/config.json
 ```
 
-**获取 Token（用于认证）：**
+### 3. 配置 ClawVerse
 
 ```bash
-# 查看当前配置中的 token
-openclaw config get gateway.token
-
-# 或者设置新的 token
-openclaw config set gateway.token "your-secure-token"
-```
-
-### 第三步：配置 ClawVerse
-
-```bash
-# 创建配置目录
 mkdir -p ~/.clawverse
-
-# 复制示例配置
 cp clawverse.example.json ~/.clawverse/clawverse.json
 ```
 
@@ -124,168 +138,114 @@ cp clawverse.example.json ~/.clawverse/clawverse.json
 ```json
 {
   "nodes": {
-    "main": {
-      "url": "ws://192.168.1.10:18789",
-      "token": "your-openclaw-token",
-      "labels": ["primary"]
-    },
-    "worker-1": {
-      "url": "ws://192.168.1.11:18789",
-      "labels": ["dingtalk", "feishu"]
-    }
+    "main": { "url": "ws://192.168.1.10:18789", "token": "xxx" },
+    "worker": { "url": "ws://192.168.1.20:18789", "token": "xxx" }
   },
   "topology": {
     "type": "tree",
     "root": "main",
-    "children": {
-      "main": ["worker-1"]
-    }
+    "children": { "main": ["worker"] }
   },
-  "routing": {
-    "default": "main",
-    "rules": [
-      { "match": { "channel": "dingtalk" }, "target": "worker-1" }
-    ]
-  }
+  "routing": { "default": "main" },
+  "sync": { "enabled": true }
 }
 ```
 
-### 第四步：启动 ClawVerse Hub
+### 4. 启动 Hub
 
 ```bash
-# 开发模式（支持热重载）
-pnpm dev
-
-# 生产模式
-pnpm start
+pnpm dev    # 开发模式
+pnpm start  # 生产模式
 ```
 
-### 第五步：验证安装
+### 5. 验证
 
 ```bash
-# 检查 Hub 状态
-pnpm clawverse status
-
-# 列出所有节点
-pnpm clawverse nodes
+pnpm clawverse status  # 检查 Hub 状态
+pnpm clawverse nodes   # 列出所有节点
 ```
 
 ---
 
-## 📖 完整使用指南
+## 🔌 渠道支持
 
-### 场景一：个人多设备同步
+> **ClawVerse 编排 OpenClaw 实例，不重新实现渠道。**
 
-你在台式机、笔记本和家庭服务器上都运行了 OpenClaw，希望状态同步：
+### 原生渠道（通过 OpenClaw）
+
+在 OpenClaw 节点上使用标准 `openclaw` 命令配置：
+
+```bash
+openclaw channels add imessage
+openclaw channels add whatsapp
+openclaw channels add discord
+openclaw channels add telegram
+# ... 等等
+```
+
+### 扩展渠道（通过 Bridge）
+
+对于 OpenClaw 未原生支持的渠道，使用连接到 Hub HTTP API 的桥接服务：
+
+| 渠道 | Bridge | 端口 | Hub 端点 |
+|------|--------|------|----------|
+| 🔷 钉钉 | `bridges/dingtalk` | 3001 | `POST /api/agent` |
+| 🔶 飞书 | `bridges/feishu` | 3002 | `POST /api/agent` |
+| 🟢 企业微信 | `bridges/wecom` | 3003 | `POST /api/agent` |
+
+```bash
+cd bridges/dingtalk
+export DINGTALK_OUTGOING_TOKEN=xxx
+export CLAWVERSE_HUB_URL=http://localhost:18801  # HTTP API 端口
+pnpm standalone
+```
+
+**HTTP API 端点：**
+```
+POST /api/agent         # 接收渠道消息，路由到 OpenClaw
+GET  /api/health        # 健康检查
+GET  /api/status        # Hub 状态及所有节点
+GET  /api/nodes         # 列出已注册节点
+POST /api/routing/test  # 测试路由规则
+```
+
+---
+
+## 📖 使用示例
+
+### 多设备同步（平行拓扑）
 
 ```json
 {
   "nodes": {
-    "desktop": { "url": "ws://192.168.1.10:18789", "labels": ["台式机"] },
-    "laptop": { "url": "ws://192.168.1.20:18789", "labels": ["笔记本"] },
-    "server": { "url": "ws://192.168.1.30:18789", "labels": ["服务器"] }
+    "desktop": { "url": "ws://192.168.1.10:18789" },
+    "laptop": { "url": "ws://192.168.1.20:18789" },
+    "server": { "url": "ws://192.168.1.30:18789" }
   },
   "topology": { "type": "flat" },
-  "routing": { "default": "desktop" },
-  "sync": {
-    "enabled": true,
-    "interval": 60,
-    "scope": {
-      "memory": true,
-      "sessions": true,
-      "skills": true,
-      "config": false
-    }
-  }
+  "sync": { "enabled": true, "scope": { "memory": true, "sessions": true } }
 }
 ```
 
-**效果：**
-- 在任意设备上的对话记忆会同步到其他设备
-- 学习到的技能（skills）自动共享
-- 配置文件各设备独立管理
-
-### 场景二：层级任务分发
-
-主节点处理复杂任务，工作节点处理特定渠道：
+### 任务分发（树形拓扑）
 
 ```json
 {
   "nodes": {
-    "main": {
-      "url": "ws://main-server:18789",
-      "labels": ["primary", "complex-tasks"],
-      "capabilities": ["browser", "canvas", "exec"]
-    },
-    "dingtalk-worker": {
-      "url": "ws://worker-1:18789",
-      "labels": ["dingtalk", "feishu"]
-    },
-    "research-worker": {
-      "url": "ws://worker-2:18789",
-      "labels": ["research", "web-search"]
-    }
+    "main": { "url": "ws://main:18789", "labels": ["primary"] },
+    "dingtalk-worker": { "url": "ws://worker1:18789", "labels": ["dingtalk"] }
   },
   "topology": {
     "type": "tree",
     "root": "main",
-    "children": {
-      "main": ["dingtalk-worker", "research-worker"]
-    }
+    "children": { "main": ["dingtalk-worker"] }
   },
   "routing": {
     "default": "main",
-    "rules": [
-      { "match": { "channel": "dingtalk" }, "target": "dingtalk-worker", "priority": 10 },
-      { "match": { "channel": "feishu" }, "target": "dingtalk-worker", "priority": 10 },
-      { "match": { "label": "research" }, "target": "research-worker", "priority": 5 }
-    ],
-    "escalation": {
-      "enabled": true,
-      "triggers": ["ESCALATE", "UNABLE_TO_HANDLE", "NEED_HUMAN"]
-    }
+    "rules": [{ "match": { "channel": "dingtalk" }, "target": "dingtalk-worker" }],
+    "escalation": { "enabled": true }
   }
 }
-```
-
-**工作流程：**
-1. 钉钉/飞书消息 → 路由到 `dingtalk-worker`
-2. 标记为 `research` 的任务 → 路由到 `research-worker`
-3. 工作节点无法处理时 → 自动升级到 `main` 节点
-4. 主节点可以向下委托子任务
-
-### 场景三：使用渠道桥接
-
-#### 启动钉钉桥接
-
-```bash
-cd bridges/dingtalk
-
-# 配置环境变量
-export DINGTALK_OUTGOING_TOKEN=your-dingtalk-token
-export CLAWVERSE_HUB_URL=http://localhost:18800/api/agent
-export CLAWVERSE_TOKEN=your-hub-token
-export MODEL=gpt-4o
-
-# 启动桥接服务
-pnpm standalone
-```
-
-钉钉配置：
-1. 登录钉钉开放平台，创建企业内部机器人
-2. 开启"消息接收地址"，设置为 `http://your-server:3001/webhook`
-3. 复制 Token 到环境变量
-
-#### 启动飞书桥接
-
-```bash
-cd bridges/feishu
-
-export FEISHU_APP_ID=cli_xxx
-export FEISHU_APP_SECRET=xxx
-export CLAWVERSE_HUB_URL=http://localhost:18800/api/agent
-
-pnpm standalone
 ```
 
 ---
@@ -294,44 +254,11 @@ pnpm standalone
 
 | 命令 | 说明 |
 |------|------|
-| `clawverse status` | 显示 Hub 状态和节点概览 |
-| `clawverse nodes` | 列出所有注册的节点及其状态 |
-| `clawverse nodes get <id>` | 获取指定节点的详细信息 |
-| `clawverse config` | 显示当前配置 |
-| `clawverse send -n <node> -m <msg>` | 向指定节点发送消息 |
-
----
-
-## 🎨 Logo 设计建议
-
-OpenClaw 的 Logo 是一只**红色龙虾** 🦞，ClawVerse 的 Logo 设计建议：
-
-### 设计理念："爪之宇宙"
-
-**设计元素：**
-- **多个龙虾钳** 围绕中心呈环形/轨道排列
-- **中心枢纽** 连接所有钳子（代表控制面板）
-- **渐变色彩**：从 OpenClaw 的红色渐变到紫色/蓝色（象征扩展）
-- **轨道环** 暗示多个实例协同运作
-
-**ASCII 示意：**
-```
-       🦞
-    ╱     ╲
-  🦞 ──●── 🦞
-    ╲     ╱
-       🦞
-```
-
-**配色方案：**
-- 主色：`#E53935`（OpenClaw 红）
-- 辅色：`#7B1FA2`（紫色 - 扩展）
-- 点缀：`#1976D2`（蓝色 - 连接）
-
-**标语建议：**
-- "一爪统领全局"
-- "编排智能，无处不在"
-- "你的 AI，处处相连"
+| `clawverse status` | 显示 Hub 状态 |
+| `clawverse nodes` | 列出所有节点 |
+| `clawverse nodes get <id>` | 获取节点详情 |
+| `clawverse config` | 显示配置 |
+| `clawverse send -n <node> -m <msg>` | 向节点发送消息 |
 
 ---
 
@@ -340,33 +267,34 @@ OpenClaw 的 Logo 是一只**红色龙虾** 🦞，ClawVerse 的 Logo 设计建�
 ```
 clawverse/
 ├── packages/
-│   ├── hub/                 # 中心控制面板
-│   │   └── src/
-│   │       ├── registry/    # 节点注册与心跳
-│   │       ├── topology/    # 拓扑管理
-│   │       ├── router/      # 消息路由
-│   │       ├── sync/        # 数据同步
-│   │       └── server/      # HTTP/WebSocket 服务
-│   └── cli/                 # 命令行工具
+│   ├── hub/          # 中心控制面板
+│   └── cli/          # 命令行工具
 ├── bridges/
-│   ├── common/              # 共享工具
-│   ├── dingtalk/            # 钉钉桥接
-│   ├── feishu/              # 飞书桥接
-│   └── wecom/               # 企业微信桥接
-└── docs/                    # 文档
+│   ├── common/       # 共享工具
+│   ├── dingtalk/     # 钉钉桥接
+│   ├── feishu/       # 飞书桥接
+│   └── wecom/        # 企业微信桥接
+└── docs/
 ```
 
 ---
 
-## 🔗 相关项目
+## 🎨 Logo 设计理念
 
-- [OpenClaw](https://github.com/nicepkg/openclaw) - 个人 AI 助手平台
-- [钉钉开放平台](https://open.dingtalk.com/)
-- [飞书开放平台](https://open.feishu.cn/)
-- [企业微信开放平台](https://developer.work.weixin.qq.com/)
+OpenClaw: 🦞 红色龙虾 | ClawVerse: 多只龙虾钳围绕中心枢纽
+
+```
+       🦞
+    ╱     ╲
+  🦞 ──●── 🦞
+    ╲     ╱
+       🦞
+```
 
 ---
 
-## 📄 许可证
+## 📄 开源协议
 
-MIT © ClawVerse Contributors
+[Apache License 2.0](./LICENSE)
+
+Copyright © ClawVerse Contributors

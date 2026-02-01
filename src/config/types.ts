@@ -147,14 +147,18 @@ export interface RouteDecision {
 
 // Daemon configuration
 export interface DaemonConfig {
-  /** Port to listen on (default: 18800) */
+  /** Port to listen on for WebSocket (default: 18800) */
   port: number;
+  /** Port to listen on for HTTP API (default: 18801) */
+  httpPort?: number;
   /** Bind mode */
   bind: "loopback" | "lan";
   /** Health check interval in ms */
   healthCheckIntervalMs?: number;
   /** Connection timeout in ms */
   connectionTimeoutMs?: number;
+  /** Optional API token for HTTP authentication */
+  apiToken?: string;
 }
 
 // Main configuration
@@ -169,6 +173,7 @@ export interface ClawverseConfig {
 export const DEFAULT_CONFIG: ClawverseConfig = {
   daemon: {
     port: 18800,
+    httpPort: 18801,
     bind: "loopback",
     healthCheckIntervalMs: 30000,
     connectionTimeoutMs: 10000,

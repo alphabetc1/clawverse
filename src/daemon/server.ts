@@ -1,9 +1,11 @@
 /**
- * Clawverse daemon WebSocket server
+ * Clawverse daemon WebSocket server with HTTP API
  */
 
 import { WebSocketServer, WebSocket } from "ws";
-import type { IncomingMessage } from "node:http";
+import type { IncomingMessage, Server as HttpServer } from "node:http";
+import { createServer as createHttpServer } from "node:http";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { nanoid } from "nanoid";
 import type { ClawverseConfig, NodeState, RouteContext, RoutingConfig } from "../config/types.js";
 import { loadConfig } from "../config/loader.js";
@@ -17,8 +19,10 @@ import { Router } from "../routing/router.js";
 
 export interface DaemonServerOptions {
   port: number;
+  httpPort?: number;
   bind: "loopback" | "lan";
   verbose?: boolean;
+  apiToken?: string;
 }
 
 interface ClientConnection {
@@ -41,11 +45,20 @@ interface RpcResponse {
   error?: { code: number; message: string };
 }
 
+// Agent request body for /api/agent
+interface AgentRequestBody {
+  message: string;
+  sessionKey?: string;
+  wait?: boolean;
+  timeoutMs?: number;
+}
+
 /**
  * Clawverse daemon server
  */
 export class DaemonServer {
   private wss: WebSocketServer | null = null;
+  private httpServer: HttpServer | null = null;
   private clients: Map<string, ClientConnection> = new Map();
   private registry: NodeRegistry;
   private healthMonitor: HealthMonitor;
@@ -81,11 +94,12 @@ export class DaemonServer {
   }
 
   /**
-   * Start the daemon server
+   * Start the daemon server (WebSocket + HTTP API)
    */
   async start(): Promise<void> {
     const host = this.options.bind === "loopback" ? "127.0.0.1" : "0.0.0.0";
     
+    // Start WebSocket server
     this.wss = new WebSocketServer({
       port: this.options.port,
       host,
@@ -93,8 +107,12 @@ export class DaemonServer {
 
     this.wss.on("connection", (ws, req) => this.handleConnection(ws, req));
     this.wss.on("error", (err) => {
-      console.error("Server error:", err);
+      console.error("WebSocket server error:", err);
     });
+
+    // Start HTTP API server
+    const httpPort = this.options.httpPort ?? this.config.daemon.httpPort ?? 18801;
+    await this.startHttpServer(host, httpPort);
 
     // Register and connect to all nodes
     await this.registry.registerAll(this.config.nodes);
@@ -113,7 +131,173 @@ export class DaemonServer {
     // Start health checks
     this.registry.startHealthChecks();
 
-    this.log(`Daemon server listening on ${host}:${this.options.port}`);
+    this.log(`Daemon server listening on ${host}:${this.options.port} (WebSocket)`);
+    this.log(`HTTP API listening on ${host}:${httpPort}`);
+  }
+
+  /**
+   * Start the HTTP API server
+   */
+  private async startHttpServer(host: string, port: number): Promise<void> {
+    const app = express();
+    app.use(express.json());
+
+    // Optional API token authentication middleware
+    const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+      const apiToken = this.options.apiToken ?? this.config.daemon.apiToken;
+      if (apiToken) {
+        const authHeader = req.headers.authorization;
+        const providedToken = authHeader?.startsWith("Bearer ") 
+          ? authHeader.slice(7) 
+          : req.headers["x-api-token"];
+        
+        if (providedToken !== apiToken) {
+          res.status(401).json({ error: "Unauthorized" });
+          return;
+        }
+      }
+      next();
+    };
+
+    // Health check endpoint
+    app.get("/api/health", (_req: Request, res: Response) => {
+      res.json({ status: "ok", timestamp: Date.now() });
+    });
+
+    // Hub status endpoint
+    app.get("/api/status", authMiddleware, (_req: Request, res: Response) => {
+      const status = this.getStatus();
+      res.json(status);
+    });
+
+    // List nodes endpoint
+    app.get("/api/nodes", authMiddleware, (_req: Request, res: Response) => {
+      const nodes = this.registry.getAllStates();
+      res.json({ nodes });
+    });
+
+    // Get node details
+    app.get("/api/nodes/:nodeId", authMiddleware, (req: Request, res: Response) => {
+      const { nodeId } = req.params;
+      const state = this.registry.getState(nodeId);
+      if (!state) {
+        res.status(404).json({ error: `Node ${nodeId} not found` });
+        return;
+      }
+      res.json(state);
+    });
+
+    // Main agent endpoint - receives messages from channel bridges
+    app.post("/api/agent", authMiddleware, async (req: Request, res: Response) => {
+      try {
+        const body = req.body as AgentRequestBody;
+        const channel = req.headers["x-channel"] as string | undefined;
+        const sessionKey = body.sessionKey ?? "main";
+        const wait = body.wait ?? true;
+        const timeoutMs = body.timeoutMs ?? 60000;
+
+        if (!body.message) {
+          res.status(400).json({ error: "Missing 'message' in request body" });
+          return;
+        }
+
+        // Build route context from request
+        const routeContext: RouteContext = {
+          channel,
+          sessionKey,
+        };
+
+        // Route to appropriate node
+        const decision = this.router.route(routeContext);
+        if (!decision) {
+          res.status(503).json({ 
+            error: "No available nodes to handle request",
+            routeContext,
+          });
+          return;
+        }
+
+        const targetNodeId = decision.target;
+        this.log(`Routing agent request via ${decision.strategy} to: ${targetNodeId}`);
+
+        const transport = this.registry.getTransport(targetNodeId);
+        if (!transport) {
+          res.status(503).json({ 
+            error: `Node ${targetNodeId} not connected`,
+            target: targetNodeId,
+          });
+          return;
+        }
+
+        // Track connection for least-connections strategy
+        this.router.incrementConnections(targetNodeId);
+
+        try {
+          // Call OpenClaw agent endpoint
+          const response = await transport.call("agent", {
+            message: body.message,
+            sessionKey,
+            wait,
+            timeoutMs,
+          });
+
+          this.router.decrementConnections(targetNodeId);
+
+          res.json({
+            success: !response.error,
+            result: response.result,
+            error: response.error?.message,
+            routedTo: targetNodeId,
+            strategy: decision.strategy,
+            matchedRule: decision.matchedRule,
+          });
+        } catch (err) {
+          this.router.decrementConnections(targetNodeId);
+          throw err;
+        }
+      } catch (err) {
+        console.error("Agent request failed:", err);
+        res.status(500).json({ 
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    });
+
+    // Routing test endpoint
+    app.post("/api/routing/test", authMiddleware, (req: Request, res: Response) => {
+      const context = req.body as RouteContext;
+      const result = this.router.testRoute(context);
+      res.json(result);
+    });
+
+    // Topology endpoint
+    app.get("/api/topology", authMiddleware, (_req: Request, res: Response) => {
+      res.json(this.topology.toTree());
+    });
+
+    // Routing configuration endpoint
+    app.get("/api/routing", authMiddleware, (_req: Request, res: Response) => {
+      res.json(this.router.getConfig());
+    });
+
+    // Reload configuration endpoint
+    app.post("/api/reload", authMiddleware, async (_req: Request, res: Response) => {
+      try {
+        const result = await this.handleReload();
+        res.json(result);
+      } catch (err) {
+        res.status(500).json({ 
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    });
+
+    return new Promise((resolve) => {
+      this.httpServer = createHttpServer(app);
+      this.httpServer.listen(port, host, () => {
+        resolve();
+      });
+    });
   }
 
   /**
@@ -129,6 +313,13 @@ export class DaemonServer {
       }
       this.wss.close();
       this.wss = null;
+    }
+    
+    if (this.httpServer) {
+      await new Promise<void>((resolve) => {
+        this.httpServer?.close(() => resolve());
+      });
+      this.httpServer = null;
     }
     
     this.clients.clear();

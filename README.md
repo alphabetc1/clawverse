@@ -2,7 +2,7 @@
 
 <p align="center">
   🦞 Multi-Instance OpenClaw Orchestration Platform<br>
-  Centralized control plane for managing distributed AI assistants
+  <b>Manage, route, and sync your distributed AI assistants</b>
 </p>
 
 <p align="center">
@@ -13,52 +13,88 @@
   <img src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue" alt="platform">
   <img src="https://img.shields.io/badge/language-TypeScript-3178c6" alt="language">
   <img src="https://img.shields.io/badge/runtime-Node.js%2022%2B-339933" alt="runtime">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="license">
 </p>
-
----
-
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| 🌐 **Node Registry** | Register and monitor multiple OpenClaw instances with health checks |
-| 🌳 **Topology Management** | Configure flat (parallel) or tree (hierarchical) relationships |
-| 🔀 **Smart Routing** | Route messages based on channel, labels, or custom rules |
-| 🔄 **Data Sync** | Synchronize memory, sessions, and skills across nodes |
-| ⬆️ **Task Escalation** | Automatically escalate unhandled tasks to parent nodes |
-| ⬇️ **Task Delegation** | Delegate tasks from parent to child nodes |
-| 💬 **Extended Channels** | DingTalk, Feishu, WeCom bridges beyond OpenClaw's built-in |
-| 🖥️ **CLI Tools** | Command-line interface for status, nodes, and configuration |
 
 ---
 
 ## 🏗️ Architecture
 
+ClawVerse enables **hierarchical OpenClaw clusters** where one OpenClaw can manage multiple OpenClaws, forming scalable tree structures:
+
 ```
-                        ┌─────────────────────────────────────────┐
-                        │            ClawVerse Hub                │
-                        │  ┌───────────────────────────────────┐  │
-                        │  │   Registry   │   Topology Config  │  │
-                        │  ├───────────────────────────────────┤  │
-     DingTalk ──────────┼──│   Router     │    Sync Engine     │  │
-     Feishu   ──────────┼──│   Bridge     │                    │  │
-     WeCom    ──────────┼──└───────────────────────────────────┘  │
-                        └──────────────────┬──────────────────────┘
-                                           │
-                ┌──────────────────────────┼──────────────────────────┐
-                │                          │                          │
-                ▼                          ▼                          ▼
-          ┌──────────┐              ┌──────────┐              ┌──────────┐
-          │ OpenClaw │              │ OpenClaw │              │ OpenClaw │
-          │  Node A  │◄────────────►│  Node B  │◄────────────►│  Node C  │
-          │  (Main)  │   sync       │ (Worker) │   sync       │ (Worker) │
-          └──────────┘              └──────────┘              └──────────┘
-               │                         │                         │
-               ▼                         ▼                         ▼
-          iMessage, CLI             DingTalk               Code Review
-          WhatsApp, etc.            Feishu                 Research Tasks
+                              ┌─────────────────┐
+                              │   ClawVerse     │
+                              │      Hub        │
+                              │  (Control Plane)│
+                              └────────┬────────┘
+                                       │
+           ┌───────────────────────────┼───────────────────────────┐
+           │                           │                           │
+           ▼                           ▼                           ▼
+    ┌─────────────┐             ┌─────────────┐             ┌─────────────┐
+    │  OpenClaw   │             │  OpenClaw   │             │  OpenClaw   │
+    │   Master    │             │   Master    │             │   Master    │
+    │  (Region A) │             │  (Region B) │             │  (Region C) │
+    └──────┬──────┘             └──────┬──────┘             └─────────────┘
+           │                           │
+     ┌─────┴─────┐               ┌─────┴─────┐
+     │           │               │           │
+     ▼           ▼               ▼           ▼
+┌─────────┐ ┌─────────┐    ┌─────────┐ ┌─────────┐
+│OpenClaw │ │OpenClaw │    │OpenClaw │ │OpenClaw │
+│ Worker  │ │ Worker  │    │ Worker  │ │ Worker  │
+│  A-1    │ │  A-2    │    │  B-1    │ │  B-2    │
+└────┬────┘ └─────────┘    └─────────┘ └────┬────┘
+     │                                      │
+     ▼                                      ▼
+┌─────────┐                            ┌─────────┐
+│OpenClaw │  ← Multi-level nesting     │OpenClaw │
+│  A-1-1  │                            │  B-2-1  │
+└─────────┘                            └─────────┘
 ```
+
+### Cluster Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-level Hierarchy** | OpenClaw manages OpenClaws, which can manage more OpenClaws |
+| **Task Delegation** | Parent assigns sub-tasks to children |
+| **Problem Escalation** | Child auto-escalates unhandled tasks to parent |
+| **Cross-node Sync** | Memory, sessions, skills synchronized across cluster |
+| **Smart Routing** | Route by channel, capability, load, or custom rules |
+
+### Topology Modes
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **Flat** | All nodes are peers | Multi-device sync, load balancing |
+| **Tree** | Hierarchical parent-child | Task delegation, large-scale clusters |
+
+### Communication Flow
+
+```
+Channels ──► Hub ──► Master OpenClaw ──► Worker OpenClaw ──► Sub-worker OpenClaw
+                 ◄── Escalation ◄────────── Escalation ◄──────────────┘
+```
+
+- **Delegation**: Tasks flow downward through the hierarchy
+- **Escalation**: Unhandled tasks bubble up to parent nodes
+- **Sync**: Data synchronized bidirectionally across all connected nodes
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🌳 **Topology Management** | Define flat or tree relationships between OpenClaw instances |
+| 🔀 **Smart Routing** | Route messages based on channel, labels, or custom rules |
+| 🔄 **Data Synchronization** | Sync memory, sessions, and skills across all nodes |
+| ⬆️ **Task Escalation** | Auto-escalate unhandled tasks to parent nodes |
+| ⬇️ **Task Delegation** | Delegate sub-tasks from parent to child nodes |
+| 🌐 **Node Registry** | Register, monitor, and health-check multiple instances |
+| 📱 **Full Channel Support** | All OpenClaw native channels + DingTalk, Feishu, WeCom |
 
 ---
 
@@ -68,44 +104,32 @@
 
 - [Node.js](https://nodejs.org/) >= 22.0.0
 - [pnpm](https://pnpm.io/) >= 10.0.0
-- One or more running [OpenClaw](https://github.com/nicepkg/openclaw) instances
+- [OpenClaw](https://github.com/nicepkg/openclaw) installed on target machines
 
-### Step 1: Install ClawVerse
+### 1. Install ClawVerse
 
 ```bash
-# Clone repository
 git clone https://github.com/nicepkg/clawverse.git
 cd clawverse
-
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
+pnpm install && pnpm build
 ```
 
-### Step 2: Start OpenClaw Instances
+### 2. Start OpenClaw Gateways
 
-On each machine where you want to run OpenClaw:
+On each machine running OpenClaw:
 
 ```bash
-# Install OpenClaw (if not already installed)
-npm install -g openclaw
+# Configure channels (same as standalone OpenClaw)
+openclaw channels add imessage   # or discord, telegram, etc.
 
-# Start OpenClaw gateway with remote access enabled
+# Start gateway for ClawVerse to connect
 openclaw gateway start --port 18789
-
-# Or start with specific config
-openclaw gateway start --config ~/.openclaw/config.json
 ```
 
-### Step 3: Configure ClawVerse
+### 3. Configure ClawVerse
 
 ```bash
-# Create config directory
 mkdir -p ~/.clawverse
-
-# Copy example configuration
 cp clawverse.example.json ~/.clawverse/clawverse.json
 ```
 
@@ -114,61 +138,82 @@ Edit `~/.clawverse/clawverse.json`:
 ```json
 {
   "nodes": {
-    "main": {
-      "url": "ws://192.168.1.10:18789",
-      "token": "your-openclaw-token",
-      "labels": ["primary"]
-    },
-    "worker-1": {
-      "url": "ws://192.168.1.11:18789",
-      "labels": ["dingtalk", "feishu"]
-    }
+    "main": { "url": "ws://192.168.1.10:18789", "token": "xxx" },
+    "worker": { "url": "ws://192.168.1.20:18789", "token": "xxx" }
   },
   "topology": {
     "type": "tree",
     "root": "main",
-    "children": {
-      "main": ["worker-1"]
-    }
+    "children": { "main": ["worker"] }
   },
-  "routing": {
-    "default": "main",
-    "rules": [
-      { "match": { "channel": "dingtalk" }, "target": "worker-1" }
-    ]
-  }
+  "routing": { "default": "main" },
+  "sync": { "enabled": true }
 }
 ```
 
-### Step 4: Start ClawVerse Hub
+### 4. Start Hub
 
 ```bash
-# Development mode (with hot reload)
-pnpm dev
-
-# Production mode
-pnpm start
+pnpm dev    # Development mode
+pnpm start  # Production mode
 ```
 
-### Step 5: Verify Setup
+### 5. Verify
 
 ```bash
-# Check hub status
-pnpm clawverse status
-
-# List all nodes
-pnpm clawverse nodes
+pnpm clawverse status  # Check hub status
+pnpm clawverse nodes   # List all nodes
 ```
 
 ---
 
-## 📖 Complete Usage Guide
+## 🔌 Channel Support
 
-### Managing Multiple OpenClaw Instances
+> **ClawVerse orchestrates OpenClaw instances, not re-implements channels.**
 
-#### Scenario 1: Personal Multi-Device Setup
+### Native Channels (via OpenClaw)
 
-You have OpenClaw running on your desktop, laptop, and home server:
+Configure on OpenClaw nodes using standard `openclaw` commands:
+
+```bash
+openclaw channels add imessage
+openclaw channels add whatsapp
+openclaw channels add discord
+openclaw channels add telegram
+# ... etc
+```
+
+### Extended Channels (via Bridge)
+
+For channels not natively supported by OpenClaw, use bridges that connect to the Hub's HTTP API:
+
+| Channel | Bridge | Port | Hub Endpoint |
+|---------|--------|------|--------------|
+| 🔷 DingTalk | `bridges/dingtalk` | 3001 | `POST /api/agent` |
+| 🔶 Feishu | `bridges/feishu` | 3002 | `POST /api/agent` |
+| 🟢 WeCom | `bridges/wecom` | 3003 | `POST /api/agent` |
+
+```bash
+cd bridges/dingtalk
+export DINGTALK_OUTGOING_TOKEN=xxx
+export CLAWVERSE_HUB_URL=http://localhost:18801  # HTTP API port
+pnpm standalone
+```
+
+**HTTP API Endpoints:**
+```
+POST /api/agent         # Receive channel messages, route to OpenClaw
+GET  /api/health        # Health check
+GET  /api/status        # Hub status with all nodes
+GET  /api/nodes         # List registered nodes
+POST /api/routing/test  # Test routing rules
+```
+
+---
+
+## 📖 Usage Examples
+
+### Multi-Device Sync (Flat Topology)
 
 ```json
 {
@@ -178,77 +223,42 @@ You have OpenClaw running on your desktop, laptop, and home server:
     "server": { "url": "ws://192.168.1.30:18789" }
   },
   "topology": { "type": "flat" },
-  "routing": { "default": "desktop" },
-  "sync": {
-    "enabled": true,
-    "scope": { "memory": true, "sessions": true, "skills": true }
-  }
+  "sync": { "enabled": true, "scope": { "memory": true, "sessions": true } }
 }
 ```
 
-#### Scenario 2: Hierarchical Task Distribution
-
-Main node handles complex tasks, workers handle specific channels:
+### Task Distribution (Tree Topology)
 
 ```json
 {
   "nodes": {
-    "main": { "url": "ws://main-server:18789", "labels": ["primary"] },
-    "dingtalk-worker": { "url": "ws://worker-1:18789", "labels": ["dingtalk"] },
-    "research-worker": { "url": "ws://worker-2:18789", "labels": ["research"] }
+    "main": { "url": "ws://main:18789", "labels": ["primary"] },
+    "dingtalk-worker": { "url": "ws://worker1:18789", "labels": ["dingtalk"] }
   },
   "topology": {
     "type": "tree",
     "root": "main",
-    "children": { "main": ["dingtalk-worker", "research-worker"] }
+    "children": { "main": ["dingtalk-worker"] }
   },
   "routing": {
     "default": "main",
-    "rules": [
-      { "match": { "channel": "dingtalk" }, "target": "dingtalk-worker" },
-      { "match": { "label": "research" }, "target": "research-worker" }
-    ],
-    "escalation": { "enabled": true, "triggers": ["ESCALATE", "NEED_HUMAN"] }
+    "rules": [{ "match": { "channel": "dingtalk" }, "target": "dingtalk-worker" }],
+    "escalation": { "enabled": true }
   }
 }
 ```
 
-### Using Channel Bridges
+---
 
-#### DingTalk Bridge
-
-```bash
-cd bridges/dingtalk
-
-# Set environment
-export DINGTALK_OUTGOING_TOKEN=your-token
-export CLAWVERSE_HUB_URL=http://localhost:18800/api/agent
-
-# Run bridge
-pnpm standalone
-```
-
-#### Feishu Bridge
-
-```bash
-cd bridges/feishu
-
-export FEISHU_APP_ID=cli_xxx
-export FEISHU_APP_SECRET=xxx
-export CLAWVERSE_HUB_URL=http://localhost:18800/api/agent
-
-pnpm standalone
-```
-
-### CLI Reference
+## 🖥️ CLI Reference
 
 | Command | Description |
 |---------|-------------|
-| `clawverse status` | Show hub status and node summary |
-| `clawverse nodes` | List all registered nodes with status |
-| `clawverse nodes get <id>` | Get details for a specific node |
-| `clawverse config` | Display current configuration |
-| `clawverse send -n <node> -m <msg>` | Send message to a specific node |
+| `clawverse status` | Show hub status |
+| `clawverse nodes` | List all nodes |
+| `clawverse nodes get <id>` | Get node details |
+| `clawverse config` | Show configuration |
+| `clawverse send -n <node> -m <msg>` | Send message to node |
 
 ---
 
@@ -257,24 +267,34 @@ pnpm standalone
 ```
 clawverse/
 ├── packages/
-│   ├── hub/                 # Central control plane
-│   │   └── src/
-│   │       ├── registry/    # Node registration & heartbeat
-│   │       ├── topology/    # Topology management
-│   │       ├── router/      # Message routing
-│   │       ├── sync/        # Data synchronization
-│   │       └── server/      # HTTP/WebSocket server
-│   └── cli/                 # Command-line interface
+│   ├── hub/          # Central control plane
+│   └── cli/          # Command-line interface
 ├── bridges/
-│   ├── common/              # Shared utilities
-│   ├── dingtalk/            # DingTalk bridge
-│   ├── feishu/              # Feishu/Lark bridge
-│   └── wecom/               # WeCom bridge
-└── docs/                    # Documentation
+│   ├── common/       # Shared utilities
+│   ├── dingtalk/     # DingTalk bridge
+│   ├── feishu/       # Feishu bridge
+│   └── wecom/        # WeCom bridge
+└── docs/
+```
+
+---
+
+## 🎨 Logo Concept
+
+OpenClaw: 🦞 Red Lobster | ClawVerse: Multiple claws orbiting a hub
+
+```
+       🦞
+    ╱     ╲
+  🦞 ──●── 🦞
+    ╲     ╱
+       🦞
 ```
 
 ---
 
 ## 📄 License
 
-MIT © ClawVerse Contributors
+[Apache License 2.0](./LICENSE)
+
+Copyright © ClawVerse Contributors
